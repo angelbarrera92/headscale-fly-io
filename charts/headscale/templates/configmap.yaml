@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "headscale.fullname" . }}-config
+  labels:
+    {{- include "headscale.labels" . | nindent 4 }}
+data:
+  config.template.yaml: |
+    server_url: https://${HEADSCALE_DOMAIN_NAME}
+    listen_addr: 0.0.0.0:8080
+    metrics_listen_addr: 0.0.0.0:8081
+    grpc_listen_addr: 0.0.0.0:50443
+    grpc_allow_insecure: true  # TLS is terminated at ingress/gateway level
+
+    ephemeral_node_inactivity_timeout: ${HEADSCALE_EPHEMERAL_NODE_INACTIVITY_TIMEOUT}
+
+    log:
+      level: ${HEADSCALE_LOG_LEVEL}
+
+    noise:
+      private_key_path: /var/lib/headscale/noise_private.key
+
+    policy:
+      mode: database
+
+    database:
+      type: sqlite
+      sqlite:
+        path: /var/lib/headscale/db.sqlite
+        write_ahead_log: true
+
+    prefixes:
+      v6: ${HEADSCALE_PREFIXES_V6}
+      v4: ${HEADSCALE_PREFIXES_V4}
+      allocation: ${HEADSCALE_PREFIXES_ALLOCATION}
+
+    derp:
+      urls:
+      - https://controlplane.tailscale.com/derpmap/default
+
+    dns:
+      magic_dns: ${HEADSCALE_DNS_MAGIC_DNS}
+      base_domain: ${HEADSCALE_DNS_BASE_DOMAIN}
+      nameservers:
+        global: [ ${HEADSCALE_DNS_NAMESERVERS_GLOBAL} ]
+      search_domains: [ ${HEADSCALE_DNS_SEARCH_DOMAINS} ]
+
+  config-oidc.template.yaml: |
+    oidc:
+      allowed_domains: [ ${HEADSCALE_OIDC_ALLOWED_DOMAINS} ]
+      allowed_groups: [ ${HEADSCALE_OIDC_ALLOWED_GROUPS} ]
+      allowed_users: [ ${HEADSCALE_OIDC_ALLOWED_USERS_YAML} ]
+      client_id: "${HEADSCALE_OIDC_CLIENT_ID}"
+      client_secret: "${HEADSCALE_OIDC_CLIENT_SECRET}"
+      expiry: "${HEADSCALE_OIDC_EXPIRY}"
+      extra_params: {}
+      issuer: "${HEADSCALE_OIDC_ISSUER}"
+      only_start_if_oidc_is_available: ${HEADSCALE_OIDC_ONLY_START_IF_OIDC_IS_AVAILABLE}
+      scope: [ openid, profile, email ]
+      use_expiry_from_token: ${HEADSCALE_OIDC_USE_EXPIRY_FROM_TOKEN}
