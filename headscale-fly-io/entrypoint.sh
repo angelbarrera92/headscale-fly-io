@@ -74,6 +74,7 @@ write_config() {
   export HEADSCALE_PREFIXES_V6="${HEADSCALE_PREFIXES_V6:-fd7a:115c:a1e0::/48}"
   export HEADSCALE_PREFIXES_ALLOCATION="${HEADSCALE_PREFIXES_ALLOCATION:-random}"
   export HEADSCALE_EPHEMERAL_NODE_INACTIVITY_TIMEOUT="${HEADSCALE_EPHEMERAL_NODE_INACTIVITY_TIMEOUT:-30m}"
+  export HEADSCALE_OIDC_EXPIRY="${HEADSCALE_OIDC_EXPIRY:-180d}"
 
   # Generate the Headscale configuration file by substituting environment variables.
   info "writing $HEADSCALE_CONFIG_PATH"
@@ -98,6 +99,15 @@ write_config() {
     # shellcheck disable=SC3060
     envsubst < "${HEADSCALE_CONFIG_PATH/.yaml/-oidc.template.yaml}" >> $HEADSCALE_CONFIG_PATH
   fi
+
+  # Unset HEADSCALE_* env vars that have been moved/removed in v0.29.3 to prevent
+  # headscale's viper config from picking them up as deprecated config keys.
+  unset HEADSCALE_EPHEMERAL_NODE_INACTIVITY_TIMEOUT
+  unset HEADSCALE_OIDC_EXPIRY
+  unset HEADSCALE_OIDC_SCOPES
+  unset HEADSCALE_OIDC_USE_EXPIRY_FROM_TOKEN
+  unset HEADSCALE_OIDC_ONLY_START_IF_OIDC_IS_AVAILABLE
+  unset HEADSCALE_OIDC_ALLOWED_USERS_YAML
 }
 
 write_headplane_config() {
@@ -158,7 +168,7 @@ start_headplane() {
 
   info "starting headplane in background (logs to stdout/stderr)"
   cd /opt/headplane
-  HEADPLANE_CONFIG_PATH=/etc/headscale/config-headplane.yaml NODE_PATH=/opt/headplane/node_modules node /opt/headplane/build/server/index.js 2>&1 &
+  HEADPLANE_CONFIG_PATH=/etc/headscale/config-headplane.yaml node /opt/headplane/build/server/index.js 2>&1 &
   HEADPLANE_PID=$!
   info "headplane started with PID $HEADPLANE_PID"
 }
