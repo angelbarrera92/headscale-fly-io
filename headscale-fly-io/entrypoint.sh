@@ -114,6 +114,15 @@ write_config() {
     # shellcheck disable=SC3060
     envsubst < "${HEADSCALE_CONFIG_PATH/.yaml/-oidc.template.yaml}" >> $HEADSCALE_CONFIG_PATH
   fi
+
+  # Unset HEADSCALE_* env vars that have been moved/removed in headscale 0.29+
+  # to prevent headscale's viper config from picking them up as deprecated
+  # config keys. Their values were consumed by envsubst above.
+  unset HEADSCALE_EPHEMERAL_NODE_INACTIVITY_TIMEOUT
+  unset HEADSCALE_OIDC_SCOPES
+  unset HEADSCALE_OIDC_USE_EXPIRY_FROM_TOKEN
+  unset HEADSCALE_OIDC_ONLY_START_IF_OIDC_IS_AVAILABLE
+  unset HEADSCALE_OIDC_ALLOWED_USERS_YAML
 }
 
 write_headplane_config() {
